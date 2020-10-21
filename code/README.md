@@ -1,25 +1,10 @@
-# McOpt (Multi-commodity Optimal Transport)
+# McOpt (Multi-commodity Optimal Transport) - Code
 
-McOpt /mæk ɒpt/ is a Python implementation of the algorithms described in:
-
-- [1] Alessandro Lonardi, Enrico Facca, Mario Putti and Caterina De Bacco. <i>Optimal transport for multi-commodity routing on networks</i>.
-
-This is a new algorithm capable of finding optimal multi-commodity flows on networks solving a dynamical system of equations, or solving an optimization problem by means of a fast iterative update of the flows. Our implementations proved to be more efficient than state-of-the-art methods employed to solve optimal transport problems.
-
-If you use this code please cite [1].
-
-The paper can be found (ADD LINK) here (preprint).
-
-See ```code/data_visualization.ipynb``` for an example result on the Paris metro.
-
-## What's included
-
-- ```code```: contains the all the Python scripts necessary to run McOpt and a Jupyter notebook ```data_visualization.ipynb``` with which it is possible to visualize the converged networks.
-- ```data/input```: contains a network (Paris metro) on which the algorithm can be tested. The network topology has been pre-processed and extracted using [2]. Passengers usage data have been taken from [3].
-- ```data/output```: repository used to store some of the metrics we are able to study with McOpt.
-
-[2] R. Kujala, C. Weckström, R. K. Darst, M. N. Mladenović, and J. Saramäki, Scientific data <b>5</b>, 180089 (2018).<br/>
-[3]  <a href="https://data.ratp.fr/explore/dataset/trafic-annuel-entrant-par-station-du-reseau-ferre-2019/information/"> “Trafic annuel entrant par station du réseau ferré 2019”</a>, (2019), accessed: 2020-08-28.
+## Basic usage example
+```bash
+python main.py
+```  
+This runs both dynamics and optimization implementations with `beta=0.5` on the Paris metro dataset.
 
 ## Requirements
 
@@ -81,6 +66,26 @@ python main.py --help
   - ```3``` number of basis loops
   - ```4``` number of idle edges
 - ```-v```: ```0```/```1``` do not print/print running script comments (```default=0```)
+
+### Another usage example
+
+Let's say we want to run our scripts on generating a Waxman graph with ```N=200``` nodes and ```S=200``` commodities. We also want to generate the right hand side randomly assigning a total of 10000 units of entering mass among our commodities, and distributing it using the Fake Receiver methods (meaning that for every g^i we randomly select a node v and set z_v^i = -g^i). We fix ```beta=1.5```. To do this should give the following command:<br/>
+```bash
+python main.py -fg graph_generated.dat -fa adj_generated.dat -fs rhs_generated.dat -fc coord_generated.dat -topol 0 -N 200 -S 200 -a fr -mass 0 -M 10000 -b 1.5
+```
+
+### Convergence Criteria
+
+Here we propose an alternative stopping criteria for our algorithms. In particular we set impose ```convergence_achieved=True``` for Dynamics as the cost difference between two consecutive time steps is below a certain threshold <b>and</b> the maximum absolute difference between the conductivies is under another threshold (resp. the norm of the fluxes of Optimization). Precisely
+```python
+if abs_diff_cost < threshold_cost and abs_diff < threshold_cond:
+    convergence_achieved = True
+```
+As beta approaches 2 we relax this critera. Due to the cost strong concavity it is in fact progressively harder to find a unique minimum, and while the energy gets minimized we may jump between different feasible solutions. We impose
+```python
+if abs_diff_cost < threshold_cost:
+    convergence_achieved = True
+```
 
 ## I/O format
 
