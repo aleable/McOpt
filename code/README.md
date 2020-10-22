@@ -76,12 +76,12 @@ python main.py -fg graph_generated.dat -fa adj_generated.dat -fs rhs_generated.d
 
 ### Convergence Criteria
 
-Here we propose an alternative stopping criteria for our algorithms. In particular we set impose ```convergence_achieved=True``` for Dynamics as the cost difference between two consecutive time steps is below a certain threshold <b>and</b> the maximum absolute difference between the conductivies is under another threshold (resp. the norm of the fluxes of Optimization). Precisely
+Here we propose an alternative stopping criteria for our algorithms. In particular we set ```convergence_achieved=True``` for Dynamics as the cost difference between two consecutive time steps is below a certain threshold <b>and</b> the maximum absolute difference between the conductivities is under another threshold (resp. the norm of the fluxes of Optimization). Precisely
 ```python
 if abs_diff_cost < threshold_cost and abs_diff < threshold_cond:
     convergence_achieved = True
 ```
-As beta approaches 2 we relax this critera. Due to the cost strong concavity it is in fact progressively harder to find a unique minimum, and while the energy gets minimized we may jump between different feasible solutions. We impose
+As beta approaches 2 we relax this criteria. Due to the cost strong concavity it is in fact progressively harder to find a unique minimum, and while the energy gets minimized we may jump between different feasible solutions. We impose
 ```python
 if abs_diff_cost < threshold_cost:
     convergence_achieved = True
