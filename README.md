@@ -8,7 +8,7 @@ This is a new algorithm capable of finding optimal multi-commodity flows on netw
 
 If you use this code please cite [1].
 
-The paper can be found (ADD LINK) here (preprint).
+The paper can be found <a href="https://arxiv.org/abs/2010.14377">here</a> (preprint).
 
 See ```code/data_visualization.ipynb``` for an example result on the Paris metro.
 
