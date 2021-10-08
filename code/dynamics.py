@@ -1,206 +1,202 @@
 """
-McOpt (Multi-commodity Optimal Transport)
+McOpt (Multicommodity Optimal Transport) -- https://github.com/aleable/McOpt
 
-Alessandro Lonardi
-Enrico Facca
-Caterina De Bacco
-
-root_file: main.py
-branch_file: -initialization.py
-             -dynamics.py
-             -optimization.py
-             -export.py
+Contributors:
+    Alessandro Lonardi
+    Enrico Facca
+    Caterina De Bacco
 """
 
-#######################################
-# PACKAGES
-#######################################
-
-import pickle,time, warnings
 import numpy as np
 import networkx as nx
-import random
-import copy
-import scipy as sp
 from scipy.sparse import csr_matrix
 from scipy.sparse import diags
 from scipy.sparse import identity
 from scipy.sparse.linalg import spsolve
 
-#######################################
 
-warnings.filterwarnings("ignore", message="Matrix is exactly singular")
+def tdensinit(self):
+    """Initialization of the conductivities: mu_e ~ U(0,1)
 
-def tdensinit(nedge, seed=10):
-    """initialization of the conductivities: mu_e ~ U(0,1)"""
-    prng = np.random.RandomState(seed=seed)
-    tdens_0 = [prng.uniform(0, 1) for i in range(nedge)]
-    tdens_0 = np.array(tdens_0)
+    Returns:
+        self.tdens: np.array, initialized conductivities
+    """
 
-    return tdens_0
+    prng = np.random.RandomState(seed=self.seed)
+    self.tdens = np.array([prng.uniform(0, 1) for i in range(self.g.number_of_edges())])
+
+    return self.tdens
 
 
-def dyn(g, tdens_0, pflux, length, forcing, tol_var_tdens, comm_list,seed=10,verbose=False):
-    """dynamics method"""
+def dyn(self):
+    """Execute dynamics
 
-    print("\ndynamics...")
+    Returns:
+        self.tdens: np.array, conductivities at convergence
+        pot: np.array, potentials at convergence
+        cost_stack: np.array, cost at each iteration
+    """
 
-    relax_linsys = 1.0e-5       # relaxation for stiffness matrix
-    tot_time = 1000            # upper bound on number of time steps
-    time_step = 0.5             # delta_t (reduce as beta gets close to 2)
+    print("* running [dynamics]")
+
+    ####################################################################
+    # INITIALIZATION
+    ####################################################################
+
     time_iteration = 0
-    threshold_cost = 1.0e-6   # threshold for stopping criteria using cost
-    prng = np.random.RandomState(seed=seed) # only needed if spsolve has problems (inside update)
-
-    nnode = g.number_of_nodes()
+    # only needed if spsolve has problems (inside update)
+    prng = np.random.RandomState(seed=self.seed)
 
     # initialization quantities of dynamics
-    inc_mat = csr_matrix(nx.incidence_matrix(g, nodelist=list(range(nnode)), oriented=True))  # B
-    inc_transpose = csr_matrix(inc_mat.transpose())     # B^T
-    inv_len_mat = diags(1/length, 0)    # diag[1/l_e]
-    tdens = tdens_0
-    td_mat = diags(tdens, 0)    # matrix M
-    stiff = inc_mat * td_mat * inv_len_mat * inc_transpose  # B diag[mu] diag[1/l_e] B^T
+    nnode = self.g.number_of_nodes()
+    # incidence matrix
+    inc_mat = csr_matrix(nx.incidence_matrix(self.g, nodelist=list(range(nnode)), oriented=True))
+    inc_transpose = csr_matrix(inc_mat.transpose())
+    inv_len_mat = diags(1/self.length, 0)
+    td_mat = diags(self.tdens, 0)
+    # network weighted Laplacian
+    stiff = inc_mat * td_mat * inv_len_mat * inc_transpose
 
     # spsolve
-    stiff_relax = stiff + relax_linsys * identity(nnode)    # avoid zero kernel
-    pot = spsolve(stiff_relax, forcing.transpose())     # pressure
+    stiff_relax = stiff + self.relax_linsys * identity(nnode)  # avoid zero kernel
+    pot = spsolve(stiff_relax, self.forcing)                   # pressure vector
 
-    # dynamics
+    # executing dynamics
     convergence_achieved = False
     cost = 0
+    cost_stack = []
 
-    fmax = forcing.max()
+    td_mat = np.diag(self.tdens)
 
-    while not convergence_achieved and time_iteration < tot_time:
+    ####################################################################
+
+    while not convergence_achieved and time_iteration <= self.tot_time:
+
+        ####################################################################
+        # RUNNING THE DYNAMICS
+        ####################################################################
 
         time_iteration += 1
 
         # update tdens-pot system
-        tdens_old = tdens
+        tdens_old = self.tdens
         pot_old = pot
 
         # equations update
-        tdens, pot, grad, info = update(tdens, pot, inc_mat, inc_transpose, inv_len_mat, forcing, time_step, pflux, relax_linsys, nnode)
+        self.tdens, pot, info = update(self, pot, inc_mat, inc_transpose, inv_len_mat)
 
         # singular stiffness matrix
         if info != 0:
-            tdens = tdens_old + prng.rand(*tdens.shape) * np.mean(tdens_old)/1000.
-            pot = pot_old + prng.rand(*pot.shape) * np.mean(pot_old)/1000.
+            self.tdens = tdens_old + prng.rand(*tdens_old.shape) * np.mean(tdens_old) / 1000.
+            pot = pot_old + prng.rand(*pot.shape) * np.mean(pot_old) / 1000.
 
-        # 1) convergence with conductivities
-        # var_tdens = max(np.abs(tdens - tdens_old))/time_step
-        # print(time_iteration, var_tdens)
+        # convergence criteria
+        var_tdens = max(np.abs(self.tdens - tdens_old)) / self.time_step
+        convergence_achieved, cost, abs_diff_cost = cost_convergence(self,
+                                                                     pot,
+                                                                     time_iteration,
+                                                                     cost,
+                                                                     var_tdens,
+                                                                     inc_mat,
+                                                                     inv_len_mat,
+                                                                     convergence_achieved)
 
-        # 2) an alternative convergence criteria: using total cost and maximum variation of conductivities
-        var_tdens = max(np.abs(tdens - tdens_old))/time_step
-        convergence_achieved, cost, abs_diff_cost = cost_convergence(threshold_cost, cost, tdens, pot, inc_mat, inv_len_mat, length, pflux, convergence_achieved, var_tdens)
-        if verbose: 
-            # print(time_iteration, var_tdens/forcing.max(), abs_diff_cost)
+        cost_stack.append(cost)
+        if self.verbose and time_iteration % 10 == 0:
+            print('\tit=%3d, err=%5.8f, J_diff=%5.8e' % (time_iteration, var_tdens, abs_diff_cost))
 
-            # print('\r','It=',it,'err=', abs_diff,'J-J_old=',abs_diff_cost,sep=' ', end='', flush=True)
-            print('\r','it=%3d, err/max_f=%5.2f, J_diff=%8.2e' % (time_iteration,var_tdens/fmax,abs_diff_cost),sep=' ', end=' ', flush=True)
-            time.sleep(0.05)
-
-        if var_tdens < tol_var_tdens:
+        elif time_iteration >= self.tot_time:
             convergence_achieved = True
-
-        elif time_iteration >= tot_time:
-            convergence_achieved = True
-            tdens = tdens_old
-            print("ERROR: convergence dynamics not achieved, iteration time > maxit")
+            self.tdens = tdens_old
+            print("\tERROR: dyn NOT converged [iteration > maxit]")
 
     if convergence_achieved:
-        return tdens, pot
+        print("\tconvergence achieved [dynamics]")
+        cost_stack = np.array(cost_stack)
+        return self.tdens, pot, cost_stack
     else:
-        print("ERROR: convergence dynamics not achieved")
+        print("\tERROR: dyn NOT converged")
+
+        ####################################################################
 
 
-def update(tdens, pot, inc_mat, inc_transpose, inv_len_mat, forcing, time_step, pflux, relax_linsys, nnode):
-    """dynamics update"""
+def update(self, pot, inc_mat, inc_transpose, inv_len_mat):
+    """One step update
 
-    grad = inv_len_mat*inc_transpose*pot    # discrete gradient
-    rhs_ode = (tdens**pflux)*((grad**2).sum(axis=1)) - tdens
+    Parameters:
+        pot: np.array, potential matrix on nodes
+        inc_mat: sparse.matrix, oriented incidence matrix
+        inc_transpose: sparse.matrix, oriented incidence matrix transposed
+        inv_len_mat: sparse.matrix, diagonal matrix 1/l_e
 
-    # update conductivity
-    tdens = tdens + time_step*rhs_ode
-    td_mat = sp.sparse.diags(tdens, 0)
-    # update stiffness matrix
-    stiff = inc_mat*td_mat*inv_len_mat*inc_transpose
+    Returns:
+        tdens: np.array, updated conductivities
+        pot: np.array, updated potential matrix on nodes
+        info: bool, sanity check flag spsolve
+        """
+
+    # update mu
+    grad = inv_len_mat * inc_transpose * pot
+    if self.coupling == "l2":
+        rhs_ode = (self.tdens ** self.pflux) * ((grad ** 2).sum(axis=1)) - self.tdens
+    if self.coupling == "l1":
+        rhs_ode = (self.tdens ** self.pflux) * (np.abs(grad).sum(axis=1)) ** 2 - self.tdens
+
+    self.tdens = self.tdens + self.time_step*rhs_ode
+    td_mat = diags(self.tdens, 0)
+    stiff = inc_mat * td_mat * inv_len_mat * inc_transpose
 
     # spsolve
-    stiff_relax = stiff + relax_linsys*identity(nnode)  # avoid zero kernel
+    stiff_relax = stiff + self.relax_linsys * identity(self.g.number_of_nodes())
+    pot = spsolve(stiff_relax, self.forcing)
 
-    # update potential
-    
-    pot = spsolve(stiff_relax, forcing.transpose())   # pressure
-    if np.any(np.isnan(pot)): # or np.any(pot != pot)
+    # sanity check
+    if np.any(np.isnan(pot)):
         info = -1
         pass
     else:
         info = 0
 
-    return tdens, pot, grad, info
+    return self.tdens, pot, info
 
-def cost_convergence(threshold_cost, cost, tdens, pot, inc_mat, inv_len_mat, length, pflux, convergence_achieved, var_tdens):
-    """computing convergence using total cost: setting a high value for maximum conducivity variability"""
 
-    td_mat = np.diag(tdens)
-    flux_mat = np.matmul(td_mat*inv_len_mat*np.transpose(inc_mat), pot)
-    flux_norm = np.linalg.norm(flux_mat, axis=1)
-    cost_update = np.sum(length*(flux_norm**(2*(2-pflux)/(3-pflux))))
+def cost_convergence(self, pot, time_iteration, cost, var_tdens, inc_mat, inv_len_mat, convergence_achieved):
+    """Evaluating convergence
+
+    Parameters:
+        pot: np.array, potential matrix on nodes
+        time_iteration: int, iteration number
+        cost: float, cost
+        var_tdens: time step difference conductivities
+        inc_mat: sparse.matrix, oriented incidence matrix
+        inv_len_mat: sparse.matrix, diagonal matrix 1/l_e
+        convergence_achieved: bool, convergence flag
+
+    Returns:
+        convergence_achieved: bool, updated convergence flag
+        cost_update: float, updated cost
+        abs_diff_cost: float, difference cost
+
+    """
+
+    td_mat = np.diag(self.tdens)
+    flux_mat = np.matmul(td_mat * inv_len_mat * np.transpose(inc_mat), pot)
+
+    if self.coupling == "l2":
+        flux_norm = np.linalg.norm(flux_mat, axis=1)**2
+    if self.coupling == "l1":
+        flux_norm = np.linalg.norm(flux_mat, axis=1, ord=1)**2
+
+    cost_update = np.sum(self.length * (flux_norm ** ((2 - self.pflux) / (3 - self.pflux))))
     abs_diff_cost = abs(cost_update - cost)
 
-    if pflux > 1.45:
-        if abs_diff_cost < threshold_cost :
+    # only the cost is calculated to evaluate convergence if beta >= 1.0
+    if self.pflux >= 1.0:
+        if abs_diff_cost < self.tau_cost_dyn and time_iteration > 30:
             convergence_achieved = True
-        
-    else: 
-        if abs_diff_cost < threshold_cost and var_tdens < 1:
+
+    else:
+        if abs_diff_cost < self.tau_cost_dyn and var_tdens < self.tau_cond_dyn:
             convergence_achieved = True
 
     return convergence_achieved, cost_update, abs_diff_cost
-
-def abs_trimming_dyn(g, opttdens, optpot, length, output_path, tau):
-    """obtaining the trimmed graph using an absolute threshold"""
-
-    print("trimming dynamics graph...\n")
-
-    nnode = len(g.nodes())
-    inc_mat = csr_matrix(nx.incidence_matrix(g, nodelist=list(range(nnode)), oriented=True))    # delta
-    inv_len_mat = diags(1/length, 0)    # diag[1/l_e]
-
-    mu_mat = np.diag(opttdens)
-    flux_mat = np.matmul(mu_mat*inv_len_mat*np.transpose(inc_mat), optpot)
-    flux_norm = np.linalg.norm(flux_mat, axis=1)
-
-    edges_list = list(g.edges)
-
-    g_trimmed = copy.deepcopy(g)
-    g_final = copy.deepcopy(g)
-
-    index_to_remove = []
-
-    # remove flux below trimming threshold
-    for i in range(len(flux_norm)):
-        g_trimmed.remove_edge(edges_list[i][0], edges_list[i][1])
-        if flux_norm[i] < tau:
-            index_to_remove.append(i)
-            # iteratively trim the edges
-            node_1 = edges_list[i][0]
-            node_2 = edges_list[i][1]
-            g_final.remove_edge(node_1, node_2)
-
-    opttdens_final = np.delete(opttdens, index_to_remove)
-    length_final = np.delete(length, index_to_remove)
-
-    temp = {}
-    i = 0
-    for e in g_final.edges:
-        temp[(e[0], e[1])] = i
-        i += 1
-
-    # dumping for graph visualization
-    pickle.dump(index_to_remove, open(output_path + "index_to_remove_dyn.pkl", "wb"))
-
-    return g_final, opttdens_final, length_final

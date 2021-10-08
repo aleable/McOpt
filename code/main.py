@@ -1,165 +1,118 @@
 """
-McOpt (Multi-commodity Optimal Transport)
+McOpt (Multicommodity Optimal Transport) -- https://github.com/aleable/McOpt
 
-Alessandro Lonardi
-Enrico Facca
-Caterina De Bacco
-
-root_file: main.py
-branch_file: -initialization.py
-             -dynamics.py
-             -optimization.py
-             -export.py
+Contributors:
+    Alessandro Lonardi
+    Enrico Facca
+    Caterina De Bacco
 """
 
-#######################################
-# PACKAGES
-#######################################
-
 import os
-import pickle
 import numpy as np
 import networkx as nx
-from argparse import ArgumentParser
-from initialization import topology_generation
-from initialization import file2graph
-from initialization import coord_generation
-from initialization import eucledian_bias
-from initialization import rhs_generation
-from initialization import file2forcing
-from dynamics import tdensinit
-from dynamics import dyn
-from dynamics import abs_trimming_dyn
-from optimization import opt
-from optimization import abs_trimming_opt
-from export import data_analysis
+from scipy.sparse import csr_matrix
+from scipy.sparse import diags
 
-#######################################
-# FLAGS
-#######################################
+from initialization import *
+from dynamics import *
+from optimization import *
 
-p = ArgumentParser()
-
-# flags to create or read files with different names
-p.add_argument("-fg", "--file_graph", type=str, default="graph.dat")    # graph parameters (change to "graph_generated.dat" if -topol = 0)
-p.add_argument("-fa", "--file_adj", type=str, default="adj.dat")        # adjacency list file name (change to "adj_generated.dat" if -topol = 0)
-p.add_argument("-fs", "--file_rhs", type=str, default="rhs.dat")        # rhs file name (change to "rhs_generated.dat" if -topol = 0)
-p.add_argument("-fc", "--file_coord", type=str, default="coord.dat")    # coordinate file name (change to "coord_generated.dat" if -topol = 0)
-
-p.add_argument("-topol", "--topol_gen", type=str, default="1")          # 0 = generate topology (Waxman graph), 1 = import topology
-p.add_argument("-N", "--n_node", type=int, default=30)                  # number of nodes in Waxman graph, ignored if -topol = 1
-p.add_argument("-S", "--n_sosi", type=int, default=10)                  # number of commodities in Waxman graph (ignored if -topol = 1)
-p.add_argument("-mass", "--mass_gen", type=str, default="1")            # 0 = generate {g^i} mass file, 1 = import mass file (ignored if -a = im)
-p.add_argument("-coord", "--coord_gen", type=str, default="1")          # 0 = generate coordinate file, 1 = import file (default = 1 if Waxman graph is generated)
-
-p.add_argument("-a", "--assignation_mass", type=str, default="ia")
-# fr = Fake Receiver
-# ia = Influence Assignment
-# im = importing forcing from previous run
-
-p.add_argument("-M", "--tot_mass", type=int, default=1000)              # total mass to distribute with Fake Receivers or Influence Assignment (ignored if -mass = 1 or -a = im)
-p.add_argument("-l", "--bias_eucl", type=str, default="eucl")           # bias =  1 + 1.0e-3 * U(0,1), eucl = eucledian distance
-
-p.add_argument("-b", "--exponent", type=float, default=0.5)             # beta
-p.add_argument("-t", "--tau_trimming", type=float, default=1.0e-3)      # trimming threshold
-
-p.add_argument("-d", "--metric", type=str, default="0")                 # metric to export for analysis
-# 0 = no export
-# 1 = graph visualization
-# 2 = J_gamma
-# 3 = number of basis loops
-# 4 = number of idle edges
-p.add_argument("-v", "--verbose", type=int, default=0)                  # whether to show comments or not
-
-# python main.py -fg "graph_generated.dat" -fa "adj_generated.dat" -fs "rhs_generated.dat" -fc "coord_generated.dat" -topol 0 -N 200 -S 200 -a fr -mass 0 -M 10000 -b 1.5 -d 1
-args = p.parse_args()
-
-#######################################
-# MAIN
-#######################################
-
-#######################################
-# initialization
-#######################################
 
 path = os.getcwd()
 input_path = os.getcwd() + "/../data/input/"
-output_path = os.getcwd() + "/../data/output/"
 
-# create output directory if it doesn't exist
-os.makedirs(output_path, exist_ok=True)
 
-# generating or importing topology
-nnode = args.n_node
-ncomm = args.n_sosi
-topol_mode = args.topol_gen
+class McOpt:
+    """Multicommodity Optimal Transport"""
 
-topology_generation(topol_mode, input_path, nnode, ncomm)   # generating
+    def __init__(self, method, coupling, museed, pflux, verbose, rho, relax_linsys, tau_cond_dyn, tau_cost_dyn,
+                 time_step, tot_time, tau_cond_opt, tau_cost_opt):
 
-graph_file_name = input_path + args.file_graph
-adj_file_name = input_path + args.file_adj
-nnode, ncomm, nedge, graph = file2graph(graph_file_name, adj_file_name)     # importing
+        # graph topology
+        self.g = nx.Graph()                                     # graph
+        self.length = np.zeros(self.g.number_of_edges())        # length of edges
 
-# assign node coordinates and choose eucledian/uniform edge lengths
-coord_mode = args.coord_gen
-length_mode = args.bias_eucl
-coord_file_name = input_path + args.file_coord
+        # dynamical system parameters
+        self.method = method                                    # paris metro / synthetic network
+        self.coupling = coupling                                # function to couple commodities, f(F_e)
+        self.rho = rho                                          # aggregation coefficient for the mass
+        self.pflux = pflux                                      # beta
+        self.relax_linsys = relax_linsys                        # relaxation for Laplacian
+        self.seed = museed                                      # seed init conductivities
+        self.tdens = np.zeros(self.g.number_of_edges())         # conductivities
+        self.forcing = np.zeros((self.g.number_of_edges(), self.g.number_of_edges()))   # right hand side
 
-if topol_mode == "0":   # coordinates are pre-assigned by the Waxman model
-    coord_mode = "1"
+        self.time_step = time_step                              # time step dynamical system
+        self.tot_time = tot_time                                # upper bound on number of time steps
 
-coord_generation(coord_mode, input_path, coord_file_name, graph, nnode)
+        # convergence paramenters
+        self.tau_cond_dyn = tau_cond_dyn                        # threshold convergence conductivities dynamics
+        self.tau_cost_dyn = tau_cost_dyn                        # threshold convergence cost fixed-point
+        self.tau_cond_opt = tau_cond_opt                        # threshold convergence conductivities dynamics
+        self.tau_cost_opt = tau_cost_opt                        # threshold convergence cost fixed-point
 
-length = np.zeros(len(graph.edges()))
-length = eucledian_bias(length_mode, graph, length)
+        # misc
+        self.verbose = verbose
 
-# generate/import rhs
-rhs_mode = args.mass_gen
-tot_mass = args.tot_mass
+        # variable at convergence
+        self.opttends_dyn = np.zeros(self.g.number_of_edges())
+        self.optpot_dyn = np.zeros((self.g.number_of_edges(), self.g.number_of_edges()))
+        self.optflux_opt = np.zeros((self.g.number_of_edges(), self.g.number_of_edges()))
+        self.cost_stack_dyn = np.zeros(self.g.number_of_edges())
+        self.cost_stack_opt = np.zeros(self.g.number_of_edges())
 
-rhs_generation(rhs_mode, input_path, graph, ncomm, tot_mass)
+    def ot_setup(self):
+        """Building graph topology"""
 
-# generate rhs: Fake Receviver or Influence Assignment
-assignation_mode = args.assignation_mass
-rhs_file_name = input_path + args.file_rhs
+        print("* graph topology construction")
 
-forcing, comm_list, transit_list = file2forcing(assignation_mode, rhs_file_name, input_path, graph, nnode, ncomm)
-forcing = np.array(forcing)
+        if self.method == "synth":
+            self.g, self.length, self.forcing = waxman_topology(self)
+        if self.method == "paris":
+            self.g, self.length, self.forcing = paris_topology(self, input_path)
 
-# pickling in case same forcing wants to be used again
-pickle.dump(comm_list, open(input_path + "comm_list.pkl", "wb"))
-pickle.dump(forcing, open(input_path + "forcing.pkl", "wb"))
+    def dyn_exec(self):
+        """Run dynamical system discretization"""
 
-#######################################
-# dynamics and optimization
-#######################################
+        self.tdens = tdensinit(self)                # conductivities initialization
+        self.opttends_dyn, self.optpot_dyn, self.cost_stack_dyn = dyn(self)     # run dynamics
 
-pflux = args.exponent   # beta
-tol_var_tdens = 10e-3   # tau_dyn (relax por change convergence criteria for beta > 1.45)
+    def opt_exec(self):
+        """Run fixed-point iteration routine"""
 
-# running dynamics
-tdens_0 = tdensinit(nedge)  # conductivities initialization
-opttdens, optpot = dyn(graph, tdens_0, pflux, length, forcing, tol_var_tdens, comm_list , verbose = args.verbose)
+        self.tdens = tdensinit(self)   # conductivities initialization
+        self.optflux_opt, self.cost_stack_opt = opt(self)   # run fixed point iteration
 
-# running optimization
-flux_mat_opt = opt(graph, tdens_0, pflux, length, forcing, verbose = args.verbose)
+    def export_flux(self):
+        """Export fluxes at convergence
 
-#######################################
-# trimming
-#######################################
+        Returns:
+            self.optflux_dyn: np.array, fluxes at convergence dynamics
+            self.optflux_opt: np.array, fluxes at convergence fixed-point
+            self.g: nx.Graph, graph topology
+            self.length: np.array, edges lengths
+            self.forcing: np. array, forcing matrix
+            """
 
-tau = args.tau_trimming
+        print("* export fluxes")
 
-graph_opt, length_opt, flux_mat_opt = abs_trimming_opt(graph, flux_mat_opt, length, output_path, tau)
-graph, opttdens, length = abs_trimming_dyn(graph, opttdens, optpot, length, output_path, tau)
+        td_mat = diags(self.opttends_dyn, 0)
+        inc_mat = csr_matrix(nx.incidence_matrix(self.g, nodelist=list(range(self.g.number_of_nodes())), oriented=True))
+        inc_transpose = csr_matrix(inc_mat.transpose())
+        inv_len_mat = diags(1 / self.length, 0)
+        optflux_dyn = td_mat * inv_len_mat * inc_transpose * self.optpot_dyn
 
-print("connected components dyn:", nx.number_connected_components(graph))
-print("connected components opt:", nx.number_connected_components(graph_opt))
+        return optflux_dyn, self.optflux_opt, self.g, self.length, self.forcing
 
-#######################################
-# exporting metrics for data analysis
-#######################################
+    def export_cost(self):
+        """Export cost array at different iterations
 
-metric_mode = args.metric
+      Returns:
+            self.cost_stack_dyn: np.array, cost vs iterations dynamics
+            self.cost_stack_opt: np.array, cost vs iterations fixed-point
+            """
 
-data_analysis(metric_mode, output_path, graph, nnode, comm_list, length, opttdens, optpot, pflux, graph_opt, flux_mat_opt, length_opt)
+        print("* export cost")
+
+        return self.cost_stack_dyn, self.cost_stack_opt
+
