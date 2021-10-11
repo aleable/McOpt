@@ -8,9 +8,9 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="104.60603mm"
+   width="100.21324mm"
    height="46.719292mm"
-   viewBox="0 0 104.60603 46.719291"
+   viewBox="0 0 100.21324 46.719291"
    version="1.1"
    id="svg8"
    inkscape:version="1.0.2 (e86c8708, 2021-01-15)"
@@ -56,8 +56,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.8671711"
-     inkscape:cx="377.14393"
-     inkscape:cy="41.198112"
+     inkscape:cx="363.2191"
+     inkscape:cy="42.269242"
      inkscape:document-units="mm"
      inkscape:current-layer="g1559"
      inkscape:document-rotation="0"
@@ -75,7 +75,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -83,17 +83,17 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-153.08065,-82.312879)">
+     transform="translate(-153.08066,-82.312881)">
     <g
        id="g1559"
        transform="matrix(1.706558,0,0,1.706558,-110.08465,-59.128926)">
       <rect
-         style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#474747;stroke-width:0.410182;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:100;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke fill markers"
+         style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#474747;stroke-width:0.401512;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:100;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke fill markers"
          id="rect1579"
-         width="60.886314"
-         height="26.966146"
-         x="154.41333"
-         y="83.086426"
+         width="58.320923"
+         height="26.974815"
+         x="154.409"
+         y="83.082092"
          rx="1.7066712"
          ry="1.7066712" />
       <rect
@@ -384,11 +384,11 @@
       <text
          xml:space="preserve"
          id="text833"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.63889999999999958px;line-height:1.25;font-family:'.Al Bayan PUA';-inkscape-font-specification:'.Al Bayan PUA, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect835);fill:url(#linearGradient1653);fill-opacity:1;stroke:#474747;stroke-width:0.3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:100;stroke-dasharray:none;stroke-opacity:1;"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.63889999999999958px;line-height:1.25;font-family:'Arial Unicode MS';-inkscape-font-specification:'Arial Unicode MS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect835);fill:url(#linearGradient1653);fill-opacity:1;stroke:#474747;stroke-width:0.3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:100;stroke-dasharray:none;stroke-opacity:1;"
          transform="translate(117.88576,-10.810781)"><tspan
            x="40.822266"
-           y="114.36594"><tspan
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.6389px;font-family:'.Al Bayan PUA';-inkscape-font-specification:'.Al Bayan PUA, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:url(#linearGradient1653);fill-opacity:1;stroke:#474747;stroke-width:0.3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:100;stroke-dasharray:none;stroke-opacity:1">McOpt</tspan></tspan></text>
+           y="114.16888"><tspan
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.6389px;font-family:'Arial Unicode MS';-inkscape-font-specification:'Arial Unicode MS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:url(#linearGradient1653);fill-opacity:1;stroke:#474747;stroke-width:0.3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:100;stroke-dasharray:none;stroke-opacity:1">McOpt</tspan></tspan></text>
     </g>
   </g>
 </svg>
