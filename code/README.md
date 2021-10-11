@@ -1,4 +1,4 @@
-![alt text](https://github.com/aleable/McOpt/blob/main/misc/logo.png)
+![alt text](https://github.com/aleable/McOpt/blob/main/misc/logo.svg)
 
 ## Implementation details
 
@@ -14,7 +14,7 @@
 - [Additional implementation details](#additional-implementation-details)
     - [Convergence criteria](#convergence-criteria)
 - [Usage examples](#usage-examples)  
-- [Contacts](#contacts) 
+- [Contacts](#contacts)
 - [License](#license)
 
 
@@ -55,11 +55,11 @@ The parameters you can pass to McOpt are described in detail in ```dashboard.ipy
     - ```relax_linsys``` (```type=float```): relaxation for the weighted network Laplacian
     - ```tau_cond_dyn``` (```type=float```): threshold for convergence of Dynamics, using the conductivities
     - ```tau_cost_dyn``` (```type=float```):  threshold for convergence of Dynamics, using the cost
-    
+
 - *Fixed-point (Optimization) scheme parameters*
     - ```tau_cond_opt``` (```type=float```): threshold for convergence of Optimization, using the conductivities
     - ```tau_cost_opt``` (```type=float```): threshold for convergence of Optimization, using the cost
-    
+
 - *Misc*
     - ```VERBOSE``` (```type=bool```): print info while running the schemes
 
@@ -82,8 +82,8 @@ The outputs returned by our schemes are:
 - ```graph```: graph topology
 - ```length```: length of the edges
 - ```forcing```: input forcing matrix
-- ```cost_dyn```: evolution of the cost along a solution trajectory of Dynamics 
-- ```cost_opt```: evolution of the cost along a solution trajectory of Optimization 
+- ```cost_dyn```: evolution of the cost along a solution trajectory of Dynamics
+- ```cost_opt```: evolution of the cost along a solution trajectory of Optimization
 
 These can be serialized using the functions ```export_flux()``` and ```export_cost()``` defined in ```main.py```.
 

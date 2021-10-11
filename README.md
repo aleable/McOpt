@@ -1,4 +1,4 @@
-![alt text](https://github.com/aleable/McOpt/blob/main/misc/logo.png)
+![alt text](https://github.com/aleable/McOpt/blob/main/misc/logo.svg)
 
 ___
 
