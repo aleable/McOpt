@@ -147,13 +147,13 @@ mcopt = McOpt(method, coupling, museed, pflux, VERBOSE, rho,
 # construct the topology
 mcopt.ot_setup()
 ```
-- *Execution*: Now, you can execute our schemes. You just need to run:
+- *Execution*: now, you can execute our schemes. You just need to run:
 ```python
 mcopt.dyn_exec()    # execute the finite difference discretization of the dynamics
 mcopt.opt_exec()    # run the fixed-point iterations
 ```
 
-- *Serialization*: Once the algorithms reached convergence, you can export the results with:
+- *Serialization*: once the algorithms reached convergence, you can export the results with:
 
 ```python
 # export the fluxes at convergence with the two schemes, the graph topology,
