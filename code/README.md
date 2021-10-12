@@ -38,6 +38,8 @@ python setup.py
 
 Now, you are ready to use the code! To do so, you can simply use the notebook ```dashboard.ipynb```, from which you can access our solvers. <br/>
 
+## How to use
+
 ### Parameters
 
 The parameters you can pass to McOpt are described in detail in ```dashboard.ipynb```. They are:
