@@ -21,7 +21,7 @@
 ## What's included
 
 - ```dashboard.ipynb```: Jupyter notebook containing an easy-to-use interface with McOpt
-- ```dashboard_misc.ipynb```: Complementary functions needed by ```dashboard.ipynb```
+- ```dashboard_misc.ipynb```: complementary functions needed by ```dashboard.ipynb```
 - ```main.py```: main function containing the McOpt class
 - ```initialization.py```: initialization of the multicommodity problem, i.e. construction of the graph topology and on the forcings
 - ```dynamics.py```: finite difference scheme (Dynamics)
