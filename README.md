@@ -14,12 +14,12 @@ This is a scheme capable of finding optimal multicommodity flows on networks sol
 ## What's included
 
 - ```code```: contains the all the scripts necessary to run McOpt, and a Jupyter notebook (```dashboard.ipynb```) with which it is possible to easily interact with them and visualize the results
-- ```data/input```: contains the data needed to build the Paris metro network, where the algorithm can be tested. The network topology has been pre-processed and extracted using [2]. Passengers usage data have been taken from [3]
+- ```data/input```: contains the data needed to build the Paris metro network, where the algorithm can be tested. The network topology has been pre-processed and extracted using [3]. Passengers usage data have been taken from [4]
 - ```misc```: files used for the README.md
 - ```setup.py```: setup file to build the Python environment
 
-[2] Rainer Kujala, Christoffer Weckström, Richard K. Darst, Miloš N. Mladenović and Jari Saramäki, <a href="https://www.nature.com/articles/sdata201889">Scientific data <b>5</b>, 180089 (2018)</a>.<br/>
-[3]  <a href="https://data.ratp.fr/explore/dataset/trafic-annuel-entrant-par-station-du-reseau-ferre-2019/information/"> “Trafic annuel entrant par station du réseau ferré 2019”</a>, (2019), accessed: 2020-08-28.
+[3] Rainer Kujala, Christoffer Weckström, Richard K. Darst, Miloš N. Mladenović and Jari Saramäki, <a href="https://www.nature.com/articles/sdata201889">Scientific data <b>5</b>, 180089 (2018)</a>.<br/>
+[4]  <a href="https://data.ratp.fr/explore/dataset/trafic-annuel-entrant-par-station-du-reseau-ferre-2019/information/"> “Trafic annuel entrant par station du réseau ferré 2019”</a>, (2019), accessed: 2020-08-28.
 
 ## How to use
 
