@@ -47,8 +47,8 @@ class McOpt:
 
         # convergence paramenters
         self.tau_cond_dyn = tau_cond_dyn                        # threshold convergence conductivities dynamics
-        self.tau_cost_dyn = tau_cost_dyn                        # threshold convergence cost fixed-point
-        self.tau_cond_opt = tau_cond_opt                        # threshold convergence conductivities dynamics
+        self.tau_cost_dyn = tau_cost_dyn                        # threshold convergence cost dynamics
+        self.tau_cond_opt = tau_cond_opt                        # threshold convergence conductivities fixed-point
         self.tau_cost_opt = tau_cost_opt                        # threshold convergence cost fixed-point
 
         # misc
