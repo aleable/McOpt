@@ -111,7 +111,7 @@ if self.pflux >= 1.0:
 
 ## Usage examples
 
-For a basic usage example of the code you can simply take a look look at ```dashboard.ipynb```. <br/>
+For a basic usage example of the code you can simply take a look at ```dashboard.ipynb```. <br/>
 The execution of McOpt is performed in three steps:
 - *Initialization*: first, you need to pass the necessary parameters to the McOpt class. Similarly to what done in ```dashboard.ipynb```, you can simply run:
 
