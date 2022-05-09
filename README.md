@@ -5,7 +5,7 @@ ___
 McOpt /mæk ɒpt/ (Multicommodity Optimal Transport) is a Python implementation of the algorithms used in:
 
 - [1] Alessandro Lonardi, Enrico Facca, Mario Putti and Caterina De Bacco. <i>Designing optimal networks for multicommodity transport problem</i>. <a href="https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.3.043010">Phys. Rev. Research <b>3</b>, 043010</a> [<a href="https://arxiv.org/abs/2010.14377">arXiv</a>].
-- [2] Alessandro Lonardi, Mario Putti and Caterina De Bacco. <i>Multicommodity routing optimization for engineering networks</i>. [<a href="https://arxiv.org/abs/2110.06171">arXiv</a>].
+- [2] Alessandro Lonardi, Mario Putti and Caterina De Bacco. <i>Multicommodity routing optimization for engineering networks</i>. <a href="https://www.nature.com/articles/s41598-022-11348-9">Sci. Rep. <b>12</b>, 7474</a> [<a href="https://arxiv.org/abs/2110.06171">arXiv</a>].
 
 This is a scheme capable of finding optimal multicommodity flows on networks solving a dynamical system of equations, or with a fixed-point scheme for the update of the flows. Our implementations is competitive with many state-of-the-art methods employed to solve optimal transport problems.
 
