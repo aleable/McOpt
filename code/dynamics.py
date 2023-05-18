@@ -180,7 +180,7 @@ def cost_convergence(self, pot, time_iteration, cost, var_tdens, inc_mat, inv_le
     """
 
     td_mat = np.diag(self.tdens)
-    flux_mat = np.matmul(td_mat * inv_len_mat * np.transpose(inc_mat), pot)
+    flux_mat = csr_matrix.dot(td_mat * inv_len_mat * np.transpose(inc_mat), pot)
 
     if self.coupling == "l2":
         flux_norm = np.linalg.norm(flux_mat, axis=1)**2
